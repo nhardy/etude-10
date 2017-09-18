@@ -5,22 +5,20 @@
 Author(s): Nathan Hardy
 """
 
+import cProfile
 import functools
 import sys
 
-def get_near_factors(number: int):
+from typing import Generator
+
+def get_near_factors(number: int) -> Generator[int, None, None]:
     """
     Generates all of the 'near factors' of a number
     """
 
-    seen = set()
-
-    # Loop through potential divisors number >= divisor > 1 (descending)
-    for divisor in range(number, 1, -1):
-        result = number // divisor
-        if result not in seen:
-            seen.add(result)
-            yield result
+    for potential in range(1, number // 2 + 1):
+        if number // (number // potential) == potential:
+            yield potential
 
 # Using a memoize cache for speedier repeated lookups
 @functools.lru_cache(maxsize=None)
@@ -63,11 +61,18 @@ def main():
         # Add tuple(a, b) to the list of scenarios
         scenarios.append(tuple(map(int, unstripped_line.split())))
 
-    print('\n\n'.join([
-        '{} {}\n# {}'.format(a, b, ''.join([
-            get_colour(n) for n in range(a, a + b)
-        ])) for a, b in scenarios
-    ]))
+    for (i, (a, b)) in enumerate(scenarios):
+        if i == 0:
+            print('\n')
+        print(a, b)
+        print('# ', end='')
+        for n in range(a, a + b):
+            print(get_colour(n), end='')
+        print()
 
 if __name__ == '__main__':
-    main()
+    for n in range(1, 20):
+        print(n, list(get_near_factors(n)))
+
+    cProfile.run('main()')
+    # main()
