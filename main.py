@@ -10,7 +10,7 @@ import functools
 import math
 import sys
 
-from typing import Generator, Tuple
+from typing import Generator, Dict
 
 def get_nontrivial_near_factors(number: int) -> Generator[int, None, None]:
     """
@@ -24,18 +24,6 @@ def get_nontrivial_near_factors(number: int) -> Generator[int, None, None]:
             if number // (number // potential) == potential:
                 yield potential
 
-COUNTS = {}
-
-def get_counts(number: int) -> Tuple[int, int]:
-    if number == 1:
-        return (1, 0)
-
-    green, red = get_counts(number - 1)
-    if get_colour(number) == 'G':
-        return (green + 1, red)
-    else:
-        return (green, red + 1)
-
 # Using a memoize cache for speedier repeated lookups
 @functools.lru_cache(maxsize=None)
 def get_colour(number: int) -> str:
@@ -46,17 +34,25 @@ def get_colour(number: int) -> str:
     if number == 1:
         return 'G'
 
-    green, red = get_counts(math.floor(math.sqrt(number)))
-
-    counts = {
-        'G': green,
-        'R': red,
-    }
+    counts = get_counts(math.floor(math.sqrt(number)))
 
     for near_factor in get_nontrivial_near_factors(number):
         counts[get_colour(near_factor)] += 1
 
     return 'R' if counts['G'] > counts['R'] else 'G'
+
+@functools.lru_cache(maxsize=None)
+def get_counts(number: int) -> Dict[str, int]:
+    if number == 1:
+        return {
+            'G': 1,
+            'R': 0,
+        }
+
+    counts = dict(**get_counts(number - 1))
+    counts[get_colour(number)] += 1
+
+    return counts
 
 def main():
     """
@@ -79,7 +75,8 @@ def main():
         # Add tuple(a, b) to the list of scenarios
         scenarios.append(tuple(map(int, unstripped_line.split())))
 
-    for i in range(max(map(lambda s: s[1], scenarios))):
+    for i in range(2, max(map(lambda s: math.floor(math.sqrt(s[0])), scenarios))):
+        # Warm the cache
         get_counts(i)
 
     for (i, (a, b)) in enumerate(scenarios):
@@ -95,9 +92,10 @@ if __name__ == '__main__':
     for n in range(1, 20):
         print(n, list(get_nontrivial_near_factors(n)))
 
-    # print(get_counts(100))
+    # for i in range(2, 10000):
+    #     get_counts(i)
 
-    # print(get_colour(10))
+    # print(get_colour(10000))
 
     cProfile.run('main()')
     # main()
