@@ -7,20 +7,24 @@ Author(s): Nathan Hardy
 
 import functools
 import sys
+from typing import Generator
 
-def get_near_factors(number: int):
+def get_near_factors(number: int) -> Generator[int, None, None]:
     """
     Generates all of the 'near factors' of a number
     """
 
-    seen = set()
+    if number > 1:
+        seen = set()
+        divisor = number
 
-    # Loop through potential divisors number >= divisor > 1 (descending)
-    for divisor in range(number, 1, -1):
-        result = number // divisor
-        if result not in seen:
-            seen.add(result)
-            yield result
+        while divisor >= 2:
+            near_factor = number // divisor
+            if near_factor not in seen:
+                seen.add(near_factor)
+                yield near_factor
+
+            divisor = number // (near_factor + 1)
 
 # Using a memoize cache for speedier repeated lookups
 @functools.lru_cache(maxsize=None)
